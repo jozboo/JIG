@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="thankyou-container container py-5 text-center">
+      <h2>Thanks, friend!</h2>
+      <p>Your feedback has been received. Have a lovely day 😊</p>
+      <a href="{{ url_for('index') }}" class="backhome-btn btn">Back to Home</a>
+    </div>
+
+{% endblock %}

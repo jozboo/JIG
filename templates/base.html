@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Improv Suggestion Generator{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/improv.css') }}" rel="stylesheet">
+
+    
+  </head>
+  <body id="bg-body">
+
+    <header class="my-header flex-md-row align-items-center bg-body">
+
+      <nav class="nav-menu navbar navbar-expand-lg bg-body-tertiary mx-auto">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='images/JIG logo.png') }}" alt="Site Logo" class="logo-text me-3" style="height: 50px;">Jozbo's Improv Generator
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'feedback' %}active{% endif %}" href="{{ url_for('feedback') }}">Feedback</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+    </header>
+
+
+      {% block content %}{% endblock %}
+
+
+    <script>
+        document.getElementById("switchCheckDefault").addEventListener("change", function () {
+          const isChecked = this.checked;
+          fetch("{{ url_for('toggle_family_friendly') }}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ familyFriendly: isChecked }),
+          })
+          .then(response => {
+            if (response.ok) {
+              // Fetch a new suggestion after updating the family-friendly state
+              return fetch("{{ url_for('new') }}", { method: "POST" });
+            } else {
+              console.error("Failed to update family-friendly state.");
+            }
+          })
+          .then(response => response.text())
+          .then(newSuggestion => {
+            document.getElementById("suggestion-display").innerText = newSuggestion; // Update the suggestion display
+          })
+          .catch(error => console.error("Error:", error));
+        });
+      </script>
+
+<script>
+  let isFirstClick = true;
+  
+  function generateSuggestion() {
+    const suggestionText = document.getElementById('suggestion-display');
+    const suggestionBox = document.getElementById('suggestion-container');
+
+    if (isFirstClick) {
+      isFirstClick = false;
+    
+    // Simulate clicking the "One Word" button
+    const category = "oneword";
+
+    // Add the "current-category" id to the "One Word" button
+    const oneWordButton = document.querySelector('.category-link[data-category="oneword"]');
+    if (oneWordButton) {
+      oneWordButton.setAttribute("id", "current-category");
+  }
+
+
+    // Fetch a new suggestion for the "oneword" category
+    fetch(`/category/${category}`, { method: "POST" })
+      .then(response => response.text())
+      .then(newSuggestion => {
+        // Update the suggestion text
+        suggestionText.textContent = newSuggestion;
+
+        // Trigger reflow to restart the animation
+        void suggestionText.offsetWidth;
+
+        // Transition to the visible state
+        suggestionText.classList.remove("animate-start");
+        suggestionText.classList.add("animate-in");
+
+        // Clean up after the animation completes
+        setTimeout(() => {
+          suggestionText.classList.remove("animate-in");
+        }, 300); // Match the CSS transition duration
+      })
+      .catch(error => console.error("Error fetching suggestion:", error));
+    
+    
+    } else {
+    
+    // Add the starting animation class
+    suggestionText.classList.add("animate-start");
+
+    // Show a loading message
+    suggestionText.innerHTML = `
+  <div class="spinner-border" style="width: 3rem; height: 3rem; border-width: 0.25rem" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+`;
+
+    fetch("{{ url_for('new') }}", { method: "POST" })
+      .then(response => response.text())
+      .then(newSuggestion => {
+        suggestionText.textContent = newSuggestion;
+
+        void suggestionText.offsetWidth; // Trigger reflow
+
+        suggestionText.classList.remove('animate-start'); // Remove the animation class
+        suggestionText.classList.add('animate-in'); // Add the animation class
+
+        // Clean up after the animation completes
+        setTimeout(() => {
+                suggestionText.classList.remove("animate-in");
+            }, 300); // Match the CSS transition duration
+
+      })
+      .catch(error => console.error("Error fetching suggestion:", error));
+  }
+}
+</script>
+
+<script>
+  // Add event listeners to all category links
+  document.querySelectorAll(".category-link").forEach(link => {
+    link.addEventListener("click", function (event) {
+      event.preventDefault(); // Prevent the default link behavior
+
+      const category = this.getAttribute("href").split("/").pop(); // Extract the category from the link's href
+      const suggestionText = document.getElementById("suggestion-display");
+      const suggestionBox = document.getElementById("suggestion-container");
+      // Add the starting animation class
+      suggestionText.classList.add("animate-start");
+
+      // Fetch a new suggestion for the selected category
+      fetch(`/category/${category}`, { method: "POST" })
+        .then(response => response.text())
+        .then(newSuggestion => {
+          // Update the suggestion text
+          suggestionText.textContent = newSuggestion;
+
+          // Trigger reflow to restart the animation
+          void suggestionText.offsetWidth;
+
+          // Transition to the visible state
+          suggestionText.classList.remove("animate-start");
+          suggestionText.classList.add("animate-in");
+
+          // Clean up after the animation completes
+          setTimeout(() => {
+            suggestionText.classList.remove("animate-in");
+          }, 300); // Match the CSS transition duration
+        })
+        .catch(error => console.error("Error fetching suggestion:", error));
+    });
+  });
+
+</script>
+
+<script>
+  document.getElementById("hide-suggestion-btn").addEventListener("click", function (event) {
+    event.preventDefault(); // Prevent the default link behavior
+
+    const suggestionText = document.getElementById("suggestion-display").textContent;
+
+    // Send the current suggestion to the backend to hide it
+    fetch("{{ url_for('hide_suggestion') }}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ suggestion: suggestionText }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log("Suggestion hidden:", suggestionText);
+
+          // Optionally fetch a new suggestion
+          fetch("{{ url_for('new') }}", { method: "POST" })
+            .then(response => response.text())
+            .then(newSuggestion => {
+              document.getElementById("suggestion-display").textContent = newSuggestion;
+            });
+        } else {
+          console.error("Failed to hide suggestion:", data.error);
+        }
+      })
+      .catch(error => console.error("Error:", error));
+  });
+</script>
+
+
+<script>
+  function fetchHiddenSuggestions() {
+    fetch("{{ url_for('get_hidden_suggestions') }}")
+      .then(response => response.json())
+      .then(data => {
+        const hiddenList = document.getElementById("hidden-suggestions-list");
+        hiddenList.innerHTML = ""; // Clear the list before adding new items
+
+        if (data.hidden && data.hidden.length > 0) {
+          data.hidden.forEach(suggestion => {
+            const listItem = document.createElement("li");
+            listItem.textContent = suggestion;
+            hiddenList.appendChild(listItem);
+          });
+        } else {
+          const listItem = document.createElement("li");
+          listItem.textContent = "No hidden suggestions.";
+          hiddenList.appendChild(listItem);
+        }
+      })
+      .catch(error => console.error("Error fetching hidden suggestions:", error));
+  }
+
+  // Call the function to fetch hidden suggestions when the page loads
+  document.addEventListener("DOMContentLoaded", fetchHiddenSuggestions);
+</script>
+
+
+<script>
+  // Add event listeners to all category links
+  document.querySelectorAll(".category-link").forEach(link => {
+    link.addEventListener("click", function (event) {
+      event.preventDefault(); // Prevent the default link behavior
+
+      // Remove the "current-category" id from the previously selected button
+      const previousButton = document.getElementById("current-category");
+      if (previousButton) {
+        previousButton.removeAttribute("id");
+      }
+
+      // Add the "current-category" id to the newly clicked button
+      this.setAttribute("id", "current-category");
+
+      // Fetch a new suggestion for the selected category
+      const category = this.getAttribute("data-category"); // Get the category from the data attribute
+      const suggestionText = document.getElementById("suggestion-display");
+
+      // Add the starting animation class
+      suggestionText.classList.add("animate-start");
+
+      fetch(`/category/${category}`, { method: "POST" })
+        .then(response => response.text())
+        .then(newSuggestion => {
+          // Update the suggestion text
+          suggestionText.textContent = newSuggestion;
+
+          // Trigger reflow to restart the animation
+          void suggestionText.offsetWidth;
+
+          // Transition to the visible state
+          suggestionText.classList.remove("animate-start");
+          suggestionText.classList.add("animate-in");
+
+          // Clean up after the animation completes
+          setTimeout(() => {
+            suggestionText.classList.remove("animate-in");
+          }, 300); // Match the CSS transition duration
+        })
+        .catch(error => console.error("Error fetching suggestion:", error));
+    });
+  });
+</script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+  </body>
+</html>

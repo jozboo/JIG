@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="feedback-container container square-container py-4">
+    <div class="container">
+      <h2 class="mb-4">Any and all feedback is welcome!</h2>
+      <h5 class="mb-4 lh-base">For example: 
+
+        <li>
+            Is it easy to use?
+        </li>
+        <li>
+            Features you'd like to see
+        </li>
+        <li>
+            New suggestions to include
+        </li>
+        <li>
+            Something doesn't work as expected
+        </li>
+        <li>
+            Or... you peeked at my code and want to admonish me... 
+        </li>
+    </h5>
+        <h6 class="mb-4">(OMG Please don't look at my code! 🙈)</h6>
+      <form method="POST" action="{{ url_for('feedback') }}">
+        <div class="mb-3">
+          <label for="name" class="form-label">Name (Optional)</label>
+          <textarea class="form-control" id="name" name="name" rows="1" placeholder="Enter your name here... if you want to..."></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="feedback" class="form-label">Your Feedback</label>
+            <textarea class="form-control" id="feedback" name="feedback" rows="5" placeholder="Enter your feedback here..." required></textarea>
+          </div>
+        <button type="submit" class="form-submit btn">Submit</button>
+      </form>
+    </div>
+</div>
+
+    {% endblock %}
